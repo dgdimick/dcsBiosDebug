@@ -1,3 +1,9 @@
+# ARC-210 working tester
+
+This branch contains the working ARC-210 version of dcsBiosDebug. See [ARC-210 setup and running instructions](ARC210_TESTING.md). Run the Python script; the original bundled executable does not include these additions.
+
+Original project documentation follows.
+
  # dcsBiosDebug  ![App Icon](iconDebugSmall.png)
  
 App to help debug DCSBios instruments.
