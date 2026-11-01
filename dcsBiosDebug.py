@@ -8,7 +8,7 @@
 
 
 
-APP_VERSION = "V1.5.3 ARC-210 Bridge Test"
+APP_VERSION = "V1.5.4 ARC-210 Bridge Test"
 
 APP_NAME = "BearTech dcsBiosDebug"
 
@@ -762,6 +762,12 @@ class DCSDebugWindow:
 		master_value = self.arc210MasterModes.index(
 			self.arc210MasterMode.get()
 		)
+		# DCS exports RT/display power separately from the MASTER selector.
+		# Send it first so an OFF -> ON boot finishes with a powered display.
+		if not self._sendDirectString(
+			0x1320, 'RT' if master_value else '', 3, 'ARC210_SELECTED_RT'
+		):
+			return
 		current_word = int(self.dcsBiosValues.get(0x1322, 0)) & 0xFFFF
 		current_word &= (~0x1C00) & 0xFFFF
 		current_word |= (master_value << 10) & 0x1C00

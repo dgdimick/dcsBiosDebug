@@ -1,8 +1,10 @@
 # ARC-210 working tester
 
-**Last updated: November 1, 2026 at 12:23 AM MDT (America/Denver)**
+**Last updated: November 1, 2026 at 4:00 AM MST (America/Denver)**
 
-**V1.5.3** adds Power On / Send All, preserves neighboring bits when sending text, and keeps receiving after a USB disconnect. I confirmed simulated radio data reached my physical panel with v0.1.3 Diagnostic; live DCS testing is still pending.
+**V1.5.4** fixes the display going blank after an OFF → ON test: **Set Master** now sends the RT/display-power indication along with the selector state. I tested the fix on my physical ARC-210 panel with the existing v0.1.3 Diagnostic HEX, and the screen stayed on after initialization. No HEX update was needed. Live DCS testing is still pending.
+
+The earlier V1.5.3 additions—Power On / Send All, preservation of neighboring bits when sending text, and serial-disconnect recovery—remain included.
 
 This branch contains the working ARC-210 version of dcsBiosDebug. See [ARC-210 setup and running instructions](ARC210_TESTING.md). Run the Python script; the original bundled executable does not include these additions.
 

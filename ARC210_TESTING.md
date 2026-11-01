@@ -1,6 +1,6 @@
 # ARC-210 working tester
 
-**Last updated: November 1, 2026 at 12:23 AM MDT (America/Denver)**
+**Last updated: November 1, 2026 at 4:00 AM MST (America/Denver)**
 
 This branch preserves the working ARC-210 testing app used with the
 [ARC-210 DCS Display project](https://github.com/dgdimick/ARC-210-DCS-Display).
@@ -30,7 +30,11 @@ It is separate from the optional-panel contribution proposed to the original
 
 The ARC-210 controls appear at the top automatically. They include MENU,
 XMT/RCV, the three left soft keys, and separate **Set Freq**, **Set Secondary**,
-and **Set Master** controls. Click **Power On / Send All** to send RT status, MAN mode, MASTER = TR, and the selected frequency together. Then use the individual controls, or choose **0 - OFF** and click **Set Master** to test radio power off.
+and **Set Master** controls. Click **Power On / Send All** to send RT status, MAN mode, MASTER = TR, and the selected frequency together. Then use the individual controls, or choose **0 - OFF** and click **Set Master** to test radio power off. In V1.5.4, **Set Master** also sends a blank RT indication for OFF and restores RT for powered positions. Choose **1 - TR-G** or **2 - TR** and click **Set Master** to test power on again; the screen should complete initialization and return to the radio display.
+
+After unplugging, resetting, or reflashing the Teensy, reconnect its port and click **Power On / Send All** to restore the complete simulated state. Merely opening the serial port does not resend all radio fields.
+
+I confirmed the V1.5.4 OFF → ON fix on my physical panel using the existing v0.1.3 Diagnostic HEX; no firmware change was needed for this bridge fix.
 
 For the normal instrument controls, load your installed DCS-BIOS aircraft JSON.
 The ARC-210 shortcuts use fixed A-10C II addresses in the script; loading another
