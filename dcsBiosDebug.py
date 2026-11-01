@@ -8,7 +8,7 @@
 
 
 
-APP_VERSION = "V1.5.2 ARC-210 Separate Controls"
+APP_VERSION = "V1.5.3 ARC-210 Bridge Test"
 
 APP_NAME = "BearTech dcsBiosDebug"
 
@@ -83,32 +83,11 @@ class StringDisplay:
 		self.updateAddr = self.address
 
 
-	def getPacket(self) :
-		packet = ""
-		if self.changed :
-			toSend = (self.address + self.max_length) - self.updateAddr
-			if toSend > 4 :
-				toSend = 4
-			if toSend == 1 :
-				toSend = 2 		#always pad to 2 bytes
-			if toSend >= 1:
-				v = self.currentText[self.count:self.count + toSend] 
-				#+ b" "
-				
-
-				l = b"" + np.uint8(toSend%256) + np.uint8(toSend/256)
-				packet =  b"" + np.uint8(self.updateAddr%256) + np.uint8(self.updateAddr/256) + l + v
-				self.count = self.count + toSend
-				self.updateAddr = self.updateAddr + toSend
-				if self.updateAddr >= self.address + self.max_length :
-					self.changed = 0
-
-				
-
-			
-		print(len(packet))
-		print(packet)
-		return packet
+	def getPacket(self):
+		if not self.changed: return b""
+		self.changed = 0
+		data = self.currentText[:self.max_length].ljust(self.max_length, b" ")
+		return mWindow.packStringWords(self.address, data)
 
 
 class LEDButton:
@@ -620,6 +599,7 @@ class DCSDebugWindow:
 			command=self.sendArc210Master
 		)
 		self.arc210SetMasterB.grid(row=4, column=3)
+		tk.Button(self.arc210ButtonF, text="Power On / Send All", command=self.powerOnRadio).grid(row=5, column=0, columnspan=4, sticky=EW)
 		
 		self.intervalF = Frame(self.topF)
 		self.intervalF.pack(side=LEFT)
@@ -658,6 +638,28 @@ class DCSDebugWindow:
 		self.quitAppB.pack(side=RIGHT, anchor=E)
 
 		
+
+	def packStringWords(self, address, data):
+		start = address & ~1
+		end = (address + len(data) + 1) & ~1
+		payload = bytearray()
+		for a in range(start, end, 2):
+			word = int(self.dcsBiosValues.get(a, 0)) & 0xffff
+			for offset in range(2):
+				index = a + offset - address
+				if 0 <= index < len(data):
+					word = (word & ~(255 << (offset * 8))) | (data[index] << (offset * 8))
+			self.dcsBiosValues[a] = word
+			payload.extend(word.to_bytes(2, 'little'))
+		return start.to_bytes(2, 'little') + len(payload).to_bytes(2, 'little') + payload
+
+	def powerOnRadio(self):
+		self.arc210Mode.set('MAN')
+		self.arc210MasterMode.set('2 - TR')
+		self._sendDirectString(0x1320, 'RT', 3, 'ARC210_SELECTED_RT')
+		self.sendArc210Secondary()
+		self.sendArc210Master()
+		self.sendArc210Frequency()
 
 	def _sendDirectWord(self, address, word, label):
 		if not self.connectionIsOpen:
@@ -713,19 +715,8 @@ class DCSDebugWindow:
 			self.statusBar.set("%s", "Connect to the Teensy first")
 			return False
 
-		data = value[:max_length].encode("ascii")
-		data = data.ljust(max_length, b" ")
-		data += b"\x00"
-		if len(data) % 2:
-			data += b"\x00"
-
-		packet = (
-			b"UUUU"
-			+ int(address).to_bytes(2, byteorder="little")
-			+ len(data).to_bytes(2, byteorder="little")
-			+ data
-			+ b"\xFE\xFF\x02\x00\x00\x00"
-		)
+		data = value[:max_length].encode("ascii").ljust(max_length, b" ")
+		packet = b"UUUU" + self.packStringWords(address, data) + b"\xFE\xFF\x02\x00\x00\x00"
 
 		print("DIRECT ARC-210 STRING SEND")
 		print("Name:", label)
@@ -1161,7 +1152,7 @@ def resource_path(relative_path):
 ###############################################
 
 
-def update() :
+def update_once() :
 	
 
 	try:
@@ -1216,7 +1207,9 @@ def update() :
 			if len(sTemp) > 3:
 				s = s + sTemp + "\n"
 
-		packet = mWindow.ser.read(30)
+		packet = mWindow.ser.read(4096)
+		if packet:
+			print("TEENSY:", packet.decode('ascii', errors='replace').strip())
 		
 
 		if mWindow.tick <50 :
@@ -1225,7 +1218,7 @@ def update() :
 			cursor = "_"
 
 		if len(str(packet)) > 3:
-			s = s + "\n" + str(packet)
+			s = s + "\n" + packet.decode("ascii", errors="replace")
 		else :
 			s = s + cursor 
 
@@ -1238,7 +1231,7 @@ def update() :
 
 	mWindow.updateCount = mWindow.updateCount + 1
 	#print(mWindow.updateCount)
-	root.after(10, update)
+
 
 
 ####################################################
@@ -1249,9 +1242,23 @@ def update() :
 #print(serPorts)
 #replayFile(serPorts)
 
+def update():
+	try:
+		update_once()
+	except (serial.SerialException, OSError) as error:
+		print("Serial disconnected:", error)
+		try: mWindow.ser.close()
+		except Exception: pass
+		mWindow.connectionIsOpen = 0
+		mWindow.connectButtonText.set("Connect")
+	finally:
+		root.after(10, update)
+
 root = tk.Tk()
 mWindow = DCSDebugWindow(root) 
 mWindow.readDefaultSettingsFile()
+if len(sys.argv) > 1:
+	mWindow.readJSONData(sys.argv[1])
 #mWindow.readJSONData()
 
 update()

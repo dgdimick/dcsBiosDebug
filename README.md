@@ -1,5 +1,9 @@
 # ARC-210 working tester
 
+**Last updated: November 1, 2026 at 12:23 AM MDT (America/Denver)**
+
+**V1.5.3** adds Power On / Send All, preserves neighboring bits when sending text, and keeps receiving after a USB disconnect. I confirmed simulated radio data reached my physical panel with v0.1.3 Diagnostic; live DCS testing is still pending.
+
 This branch contains the working ARC-210 version of dcsBiosDebug. See [ARC-210 setup and running instructions](ARC210_TESTING.md). Run the Python script; the original bundled executable does not include these additions.
 
 Original project documentation follows.
